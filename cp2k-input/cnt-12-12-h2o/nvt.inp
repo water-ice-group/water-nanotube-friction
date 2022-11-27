@@ -1,0 +1,138 @@
+@SET PSTEP 1
+@SET ROOT PATH/TO/MODEL
+
+&GLOBAL
+  PROJECT WAT-CNT
+  SEED 654321
+  PREFERRED_FFT_LIBRARY FFTW
+  FFTW_PLAN_TYPE MEASURE
+  RUN_TYPE MD
+  PRINT_LEVEL SILENT
+&END GLOBAL
+
+&FORCE_EVAL
+  METHOD  NNP
+  &NNP
+    NNP_INPUT_FILE_NAME ${ROOT}/nnp-001/input.nn
+    SCALE_FILE_NAME  ${ROOT}/nnp-001/scaling.data
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-001/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-002/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-003/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-004/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-005/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-006/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-007/weights
+    &END MODEL
+    &MODEL
+       WEIGHTS          ${ROOT}/nnp-008/weights
+    &END MODEL
+    &PRINT
+       &SUM_FORCE
+          ATOM_LIST C
+          &EACH
+             MD ${PSTEP}
+          &END EACH
+       &END SUM_FORCE
+       &ENERGIES
+          &EACH
+             MD ${PSTEP}
+          &END EACH
+       &END ENERGIES
+       &FORCES_SIGMA
+          &EACH
+             MD 100
+          &END EACH
+       &END FORCES_SIGMA
+    &END PRINT
+  &END NNP
+  &SUBSYS
+    &TOPOLOGY
+       MULTIPLE_UNIT_CELL 1 1 1
+    &END TOPOLOGY
+    &COORD
+       @INCLUDE 'cnt_m12_n12_l12_dens10.xyz'
+    &END COORD
+    &CELL
+       MULTIPLE_UNIT_CELL 1 1 1
+       ABC [angstrom] 26.34100  26.3410000   29.638
+       PERIODIC Z
+    &END CELL 
+    &KIND H
+       MASS 2.014102
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL
+
+&MOTION
+  &MD
+    ENSEMBLE NVT
+    TEMPERATURE 300.0
+    TIMESTEP 1.0
+    STEPS 1000000
+    COMVEL_TOL 0.0
+    ANGVEL_TOL 0.0
+    &THERMOSTAT
+      TYPE CSVR
+      &CSVR
+         TIMECON 1000.0
+      &END CSVR
+      REGION DEFINED
+      &DEFINE_REGION
+         LIST 1..576
+         MOLNAME SOLID
+      &END DEFINE_REGION
+      &DEFINE_REGION
+         LIST 577..966
+         MOLNAME WATER
+      &END DEFINE_REGION
+    &END THERMOSTAT
+    &PRINT
+      FORCE_LAST
+      &ENERGY
+        &EACH
+          MD ${PSTEP}
+        &END EACH
+      &END ENERGY
+    &END PRINT
+  &END MD
+  &PRINT
+    &TRAJECTORY
+      &EACH
+        MD 4
+      &END EACH
+      FORMAT DCD
+    &END TRAJECTORY
+    &VELOCITIES
+      &EACH
+        MD 4
+      &END EACH
+      FORMAT DCD
+    &END VELOCITIES
+    &FORCES
+      &EACH
+        MD 4
+      &END EACH
+      UNIT eV*angstrom^-1
+      FORMAT DCD
+    &END FORCES
+    &RESTART
+      ADD_LAST NUMERIC
+      &EACH
+        MD 4000
+      &END EACH
+    &END RESTART
+  &END PRINT
+&END MOTION
